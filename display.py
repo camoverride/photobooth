@@ -88,18 +88,18 @@ def main():
         screen_height,
     )
 
-    setup_fullscreen_window(WINDOW_NAME)
-
-    camera = open_camera(CAMERA_INDEX)
-
     if ROTATION is not None:
         rotate_screen(
-            platform.system(),
+            "ubuntu",
             ROTATION,
         )
 
     if HIDE_MOUSE:
         hide_mouse()
+
+    setup_fullscreen_window(WINDOW_NAME)
+
+    camera = open_camera(CAMERA_INDEX)
 
     while True:
 

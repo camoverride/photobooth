@@ -74,8 +74,6 @@ def get_display_resolution():
 
     else:
         raise RuntimeError(f"Unsupported operating system: {system}")
-
-
 def setup_fullscreen_window(window_name):
     """
     Creates a fullscreen OpenCV window.
@@ -85,16 +83,30 @@ def setup_fullscreen_window(window_name):
     os.environ["QT_QPA_PLATFORM"] = "xcb"
     os.environ["GDK_BACKEND"] = "x11"
 
-    time.sleep(2)
+    time.sleep(5)
 
-    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    cv2.namedWindow(
+        window_name,
+        cv2.WINDOW_NORMAL,
+    )
+
+    dummy_image = np.zeros(
+        (100, 100, 3),
+        dtype=np.uint8,
+    )
+
+    cv2.imshow(
+        window_name,
+        dummy_image,
+    )
+
+    cv2.waitKey(100)
 
     cv2.setWindowProperty(
         window_name,
         cv2.WND_PROP_FULLSCREEN,
         cv2.WINDOW_FULLSCREEN,
     )
-
 
 ##############################################################################
 # Camera
