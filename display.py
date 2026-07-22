@@ -35,7 +35,8 @@ from photobooth_utils import (
     flash_screen,
     frame_photo,
     rotate_screen,
-    hide_mouse
+    hide_mouse,
+    rotate_frame_left
 )
 
 
@@ -80,6 +81,25 @@ def main():
 
     os.makedirs(PHOTO_DIRECTORY, exist_ok=True)
 
+
+    #
+    # Rotate physical display first.
+    #
+    if ROTATION is not None:
+        rotate_screen(
+            "ubuntu",
+            ROTATION,
+        )
+
+    #
+    # Give GNOME time to update the display geometry.
+    #
+    time.sleep(3)
+
+
+    #
+    # Now get the portrait resolution.
+    #
     screen_width, screen_height = get_display_resolution()
 
     logging.info(
@@ -88,14 +108,10 @@ def main():
         screen_height,
     )
 
-    if ROTATION is not None:
-        rotate_screen(
-            "ubuntu",
-            ROTATION,
-        )
 
     if HIDE_MOUSE:
         hide_mouse()
+
 
     setup_fullscreen_window(WINDOW_NAME)
 
@@ -114,6 +130,8 @@ def main():
             if not success:
                 logging.warning("Failed to read webcam frame.")
                 continue
+
+            frame = rotate_frame_left(frame)
 
             frame = cv2.flip(frame, 1)
 
@@ -160,6 +178,8 @@ def main():
                 if not success:
                     continue
 
+                frame = rotate_frame_left(frame)
+
                 frame = cv2.flip(frame, 1)
 
                 frame = crop_and_resize(
@@ -192,6 +212,8 @@ def main():
         if not success:
             logging.warning("Failed to capture image.")
             continue
+
+        captured = rotate_frame_left(captured)
 
         captured = cv2.flip(captured, 1)
 

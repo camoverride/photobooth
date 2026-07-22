@@ -589,3 +589,15 @@ def hide_mouse():
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+
+
+def rotate_frame_left(frame):
+    """
+    Rotates a camera frame 90 degrees counter-clockwise.
+
+    Assumes the webcam is physically mounted sideways.
+    """
+    return cv2.rotate(
+        frame,
+        cv2.ROTATE_90_COUNTERCLOCKWISE,
+    )
