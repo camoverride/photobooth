@@ -21,7 +21,7 @@ Everything is delegated to photobooth_utils.py.
 import os
 import time
 import logging
-
+import platform
 import cv2
 
 from photobooth_utils import (
@@ -93,7 +93,10 @@ def main():
     camera = open_camera(CAMERA_INDEX)
 
     if ROTATION is not None:
-        rotate_screen(ROTATION)
+        rotate_screen(
+            platform.system(),
+            ROTATION,
+        )
 
     if HIDE_MOUSE:
         hide_mouse()
