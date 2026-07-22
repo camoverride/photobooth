@@ -33,7 +33,9 @@ from photobooth_utils import (
     save_photo,
     print_photo,
     flash_screen,
-    frame_photo
+    frame_photo,
+    rotate_screen,
+    hide_mouse
 )
 
 
@@ -51,6 +53,9 @@ PHOTO_DISPLAY_SECONDS = 3
 
 PHOTO_DIRECTORY = "photos"
 
+
+ROTATION = "left"        # or "left", "right", "flip", "normal"
+HIDE_MOUSE = True
 
 ##############################################################################
 # Logging
@@ -86,6 +91,12 @@ def main():
     setup_fullscreen_window(WINDOW_NAME)
 
     camera = open_camera(CAMERA_INDEX)
+
+    if ROTATION is not None:
+        rotate_screen(ROTATION)
+
+    if HIDE_MOUSE:
+        hide_mouse()
 
     while True:
 

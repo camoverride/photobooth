@@ -13,6 +13,7 @@ import numpy as np
 import os
 import platform
 import re
+import shutil
 import subprocess
 import time
 
@@ -400,3 +401,106 @@ def frame_photo(
     ] = photo
 
     return canvas
+
+
+
+def rotate_screen(rotation):
+    """
+    Rotate the primary display.
+
+    Parameters
+    ----------
+    rotation : str or None
+        One of:
+            - None
+            - "left"
+            - "right"
+            - "flip"
+            - "normal"
+    """
+
+    if rotation is None:
+        return
+
+    #
+    # macOS is only for development.
+    #
+    if platform.system() != "Linux":
+        return
+
+    env = os.environ.copy()
+    env["DISPLAY"] = ":0"
+
+    #
+    # Determine which output is connected.
+    #
+    output = subprocess.check_output(
+        "DISPLAY=:0 xrandr | grep ' connected'",
+        shell=True,
+        text=True,
+        env=env,
+    )
+
+    output_name = output.split()[0]
+
+    #
+    # Reset first. GNOME is much happier doing this.
+    #
+    subprocess.run(
+        [
+            "./gnome-randr.py",
+            "--output",
+            output_name,
+            "--rotate",
+            "normal",
+        ],
+        env=env,
+        check=True,
+    )
+
+    time.sleep(2)
+
+    #
+    # Rotate.
+    #
+    subprocess.run(
+        [
+            "./gnome-randr.py",
+            "--output",
+            output_name,
+            "--rotate",
+            rotation,
+        ],
+        env=env,
+        check=True,
+    )
+
+    time.sleep(2)
+
+
+def hide_mouse():
+    """
+    Hide the mouse cursor on Ubuntu.
+    """
+
+    if platform.system() != "Linux":
+        return
+
+    if shutil.which("unclutter") is None:
+        print("WARNING: unclutter is not installed.")
+        return
+
+    env = os.environ.copy()
+    env["DISPLAY"] = ":0"
+
+    subprocess.Popen(
+        [
+            "unclutter",
+            "--idle",
+            "0",
+            "--root",
+        ],
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
