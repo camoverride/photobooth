@@ -318,6 +318,7 @@ def flash_screen(window_name, width, height, duration=0.15):
 
     cv2.imshow(window_name, flash)
     cv2.waitKey(int(duration * 1000))
+
 def frame_photo(
     image,
     screen_width,
@@ -403,80 +404,152 @@ def frame_photo(
     return canvas
 
 
-
-def rotate_screen(rotation):
+def get_display_info() -> dict:
     """
-    Rotate the primary display.
+    Gets the active display output name on Ubuntu.
 
-    Parameters
-    ----------
-    rotation : str or None
-        One of:
-            - None
-            - "left"
-            - "right"
-            - "flip"
-            - "normal"
+    Returns
+    -------
+    dict
+        Contains:
+            output_device: str
+            width: int
+            height: int
     """
-
-    if rotation is None:
-        return
-
-    #
-    # macOS is only for development.
-    #
-    if platform.system() != "Linux":
-        return
 
     env = os.environ.copy()
     env["DISPLAY"] = ":0"
 
-    #
-    # Determine which output is connected.
-    #
     output = subprocess.check_output(
-        "DISPLAY=:0 xrandr | grep ' connected'",
+        "xrandr | grep ' connected'",
         shell=True,
         text=True,
         env=env,
     )
 
-    output_name = output.split()[0]
+    output_device = output.split()[0]
 
-    #
-    # Reset first. GNOME is much happier doing this.
-    #
-    subprocess.run(
-        [
-            "./gnome-randr.py",
-            "--output",
-            output_name,
-            "--rotate",
-            "normal",
-        ],
+    resolution = subprocess.check_output(
+        "xrandr | grep 'current'",
+        shell=True,
+        text=True,
         env=env,
-        check=True,
     )
 
-    time.sleep(2)
-
-    #
-    # Rotate.
-    #
-    subprocess.run(
-        [
-            "./gnome-randr.py",
-            "--output",
-            output_name,
-            "--rotate",
-            rotation,
-        ],
-        env=env,
-        check=True,
+    match = re.search(
+        r"current\s+(\d+)\s+x\s+(\d+)",
+        resolution,
     )
 
-    time.sleep(2)
+    width = int(match.group(1))
+    height = int(match.group(2))
 
+    return {
+        "output_device": output_device,
+        "width": width,
+        "height": height,
+    }
+
+def rotate_screen(
+    operating_system: str,
+    rotation: str
+) -> None:
+    """
+    Rotates the screen to the desired angle.
+
+    Parameters
+    ----------
+    operating_system : str
+        "raspbian", "ubuntu", or "macos"
+
+    rotation : str
+        "left", "right", "flip", or "normal"
+
+    Returns
+    -------
+    None
+    """
+
+    display_info = get_display_info()
+
+    #
+    # Ubuntu
+    #
+    if operating_system == "ubuntu":
+
+        gnome_randr = os.path.join(
+            os.path.dirname(__file__),
+            "gnome-randr.py",
+        )
+
+        #
+        # Use system python because gnome-randr.py requires dbus,
+        # which is installed outside the virtual environment.
+        #
+        python = "/usr/bin/python3"
+
+        #
+        # Reset first.
+        #
+        subprocess.run(
+            [
+                python,
+                gnome_randr,
+                "--output",
+                display_info["output_device"],
+                "--rotate",
+                "normal",
+            ],
+            check=True,
+        )
+
+        time.sleep(2)
+
+        #
+        # Apply requested rotation.
+        #
+        subprocess.run(
+            [
+                python,
+                gnome_randr,
+                "--output",
+                display_info["output_device"],
+                "--rotate",
+                rotation,
+            ],
+            check=True,
+        )
+
+        time.sleep(2)
+
+
+    #
+    # Raspbian / Wayland
+    #
+    elif operating_system == "raspbian":
+
+        if rotation == "left":
+            rotation_degs = 90
+        elif rotation == "right":
+            rotation_degs = 270
+        elif rotation == "flip":
+            rotation_degs = 180
+        else:
+            rotation_degs = 0
+
+        os.system(
+            f"WAYLAND_DISPLAY=wayland-0 "
+            f"wlr-randr "
+            f"--output {display_info['output_device']} "
+            f"--transform {rotation_degs}"
+        )
+
+
+    #
+    # macOS
+    #
+    elif operating_system == "macos":
+        pass
 
 def hide_mouse():
     """
